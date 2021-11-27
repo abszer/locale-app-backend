@@ -3,3 +3,5 @@
 node-modules
 obj
 bin
+
+appsettings.json
