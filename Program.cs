@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 
+
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddDbContext<TodoDb>(opt => opt.UseSqlServer());
+builder.Services.AddDbContext<TodoDb>(opt => opt.UseSqlServer(builder.Configuration.GetConnectionString("localeDb")));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 var app = builder.Build();
 
