@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using BCrypt.Net;
 
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<PostDb>(opt => opt.UseSqlServer(builder.Configuration.GetConnectionString("localeDb")));
+builder.Services.AddDbContext<UserDb>(opt => opt.UseSqlServer(builder.Configuration.GetConnectionString("localeDb")));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 var app = builder.Build();
 
@@ -84,6 +86,24 @@ class PostDb : DbContext
 
     public DbSet<Post> Posts => Set<Post>();
 }
+
+class User {
+    public string Username { get; set; }
+    public int Rep { get; set; }
+    public string Password { get; set; }
+    public List<string> Posts { get; set; }
+    public List<string> Followers { get; set; }
+    public List<string> LikedPosts { get; set; }
+}
+
+class UserDb : DbContext {
+    public UserDb(DbContextOptions<UserDb> options) : base(options)
+    {
+    }
+
+    public DbSet<User> Posts => Set<User>();
+}
+
 
 // EXAMPLES
 // app.MapGet("/todoitems", async (TodoDb db) =>
