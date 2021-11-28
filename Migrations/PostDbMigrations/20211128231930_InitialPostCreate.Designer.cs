@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LocaleApi.Migrations.PostDbMigrations
 {
     [DbContext(typeof(PostDb))]
-    [Migration("20211128215540_Post001")]
-    partial class Post001
+    [Migration("20211128231930_InitialPostCreate")]
+    partial class InitialPostCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {

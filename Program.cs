@@ -1,5 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using BCrypt.Net;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Collections.Generic;
+using System.Linq;
+using BCrypt;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -66,15 +70,39 @@ app.MapDelete("/api/posts/{id}", async (int PostId, PostDb db) =>
 
 ////////// USERS /////////////
 
+// GET ONE
+app.MapGet("/api/users/{id}", async (int UserId, UserDb db) => 
+    await db.Users.FindAsync(UserId)
+            is User user
+            ? Results.Ok(user)
+            : Results.NotFound());
+
+// POST 
+app.MapPost("/api/users", async (User user, UserDb db) =>
+{
+    string salt = BCrypt.Net.BCrypt.GenerateSalt();
+    string hash = BCrypt.Net.BCrypt.HashPassword(user.Password, salt);
+    user.Password = hash;
+
+    db.Users.Add(user);
+    await db.SaveChangesAsync();
+    return Results.Created($"/api/users/{user.UserId}", user);
+});
 
 app.Run();
 
+[Keyless]
+[Index(nameof(Username), IsUnique = true)]
 class User {
     public int UserId { get; set; }
+
+    [Required]
+    [StringLength(30)]
     public string Username { get; set; }
     public int Rep { get; set; }
     public string Password { get; set; }
-    public List<Post>? Posts { get; set; }
+
+    public List<int>? PId { get; set; }
 
 }
 
