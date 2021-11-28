@@ -21,7 +21,7 @@ app.MapGet("/api/posts", async (PostDb db) =>
     await db.Posts.ToListAsync());
 
 //GET ONE
-app.MapGet("/api/posts/{id}", async (int PostId, PostDb db) =>
+app.MapGet("/api/posts/{PostId}", async (int PostId, PostDb db) =>
     await db.Posts.FindAsync(PostId) 
             is Post post
             ? Results.Ok(post)
@@ -37,7 +37,7 @@ app.MapPost("/api/posts", async (Post post, PostDb db) =>
 });
 
 // PUT
-app.MapPut("/api/posts/{id}", async (int PostId, Post inputPost, PostDb db) =>
+app.MapPut("/api/posts/{PostId}", async (int PostId, Post inputPost, PostDb db) =>
 {
     var post = await db.Posts.FindAsync(PostId);
 
@@ -56,7 +56,7 @@ app.MapPut("/api/posts/{id}", async (int PostId, Post inputPost, PostDb db) =>
 });
 
 // DELETE
-app.MapDelete("/api/posts/{id}", async (int PostId, PostDb db) =>
+app.MapDelete("/api/posts/{PostId}", async (int PostId, PostDb db) =>
 {
     if (await db.Posts.FindAsync(PostId) is Post post)
     {
@@ -70,8 +70,13 @@ app.MapDelete("/api/posts/{id}", async (int PostId, PostDb db) =>
 
 ////////// USERS /////////////
 
+//DEVELOPMENT
+//GET ALL
+app.MapGet("/api/users", async (UserDb db) =>
+    await db.Users.ToListAsync());
+
 // GET ONE
-app.MapGet("/api/users/{id}", async (int UserId, UserDb db) => 
+app.MapGet("/api/users/{UserId}", async (int UserId, UserDb db) => 
     await db.Users.FindAsync(UserId)
             is User user
             ? Results.Ok(user)
@@ -83,6 +88,7 @@ app.MapPost("/api/users", async (User user, UserDb db) =>
     string salt = BCrypt.Net.BCrypt.GenerateSalt();
     string hash = BCrypt.Net.BCrypt.HashPassword(user.Password, salt);
     user.Password = hash;
+
 
     db.Users.Add(user);
     await db.SaveChangesAsync();
@@ -122,7 +128,6 @@ class User {
     public int Rep { get; set; }
     public string Password { get; set; }
 
-    public List<int>? PId { get; set; }
 
 }
 

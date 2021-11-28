@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LocaleApi.Migrations
 {
     [DbContext(typeof(UserDb))]
-    [Migration("20211128231855_InitialUserCreate")]
+    [Migration("20211128234713_InitialUserCreate")]
     partial class InitialUserCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
