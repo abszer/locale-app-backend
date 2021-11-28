@@ -24,6 +24,7 @@ app.MapGet("/api/posts/{id}", async (Guid Id, PostDb db) =>
 // POST
 app.MapPost("/api/posts", async (Post post, PostDb db) => 
 {
+    post.Date = DateTime.Now;
     db.Posts.Add(post);
     await db.SaveChangesAsync();
     return Results.Created($"/api/posts/{post.Id}", post);
