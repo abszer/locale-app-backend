@@ -89,6 +89,26 @@ app.MapPost("/api/users", async (User user, UserDb db) =>
     return Results.Created($"/api/users/{user.UserId}", user);
 });
 
+// POST (authenticate user)
+app.MapPost("/api/userauth", async ( User inputUser, UserDb db) =>
+{
+    bool isUser = await db.Users.FindAsync(inputUser.Username) is User;
+    if( isUser )
+    {
+        var user = await db.Users.FindAsync(inputUser.Username);
+        if(BCrypt.Net.BCrypt.Verify(inputUser.Password, user.Password ))
+        {
+            Results.Ok(user);
+        }else{
+            Results.Text("Incorrect password");
+        }
+    }else{
+        Results.NotFound();
+    }
+    
+
+});
+
 app.Run();
 
 [Keyless]
