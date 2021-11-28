@@ -39,7 +39,10 @@ app.MapPut("/api/posts/{id}", async (Guid Id, Post inputPost, PostDb db) =>
 
     post.Title = inputPost.Title;
     post.Image = inputPost.Image;
+    post.Date = inputPost.Date;
     post.Location = inputPost.Location;
+    post.UpVotes = inputPost.UpVotes;
+    post.DownVotes = inputPost.DownVotes;
 
     await db.SaveChangesAsync();
 
