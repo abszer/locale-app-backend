@@ -10,15 +10,15 @@ var app = builder.Build();
 
 app.MapGet("/", () => "Hello World!");
 
-////////// LOCALE API /////////////
+////////// POSTS /////////////
 
 //GET ALL
 app.MapGet("/api/posts", async (PostDb db) =>
     await db.Posts.ToListAsync());
 
 //GET ONE
-app.MapGet("/api/posts/{id}", async (Guid Id, PostDb db) =>
-    await db.Posts.FindAsync(Id) 
+app.MapGet("/api/posts/{id}", async (int PostId, PostDb db) =>
+    await db.Posts.FindAsync(PostId) 
             is Post post
             ? Results.Ok(post)
             : Results.NotFound());
@@ -29,13 +29,13 @@ app.MapPost("/api/posts", async (Post post, PostDb db) =>
     post.Date = DateTime.Now;
     db.Posts.Add(post);
     await db.SaveChangesAsync();
-    return Results.Created($"/api/posts/{post.Id}", post);
+    return Results.Created($"/api/posts/{post.PostId}", post);
 });
 
 // PUT
-app.MapPut("/api/posts/{id}", async (Guid Id, Post inputPost, PostDb db) =>
+app.MapPut("/api/posts/{id}", async (int PostId, Post inputPost, PostDb db) =>
 {
-    var post = await db.Posts.FindAsync(Id);
+    var post = await db.Posts.FindAsync(PostId);
 
     if (post is null) return Results.NotFound();
 
@@ -52,9 +52,9 @@ app.MapPut("/api/posts/{id}", async (Guid Id, Post inputPost, PostDb db) =>
 });
 
 // DELETE
-app.MapDelete("/api/posts/{id}", async (Guid Id, PostDb db) =>
+app.MapDelete("/api/posts/{id}", async (int PostId, PostDb db) =>
 {
-    if (await db.Posts.FindAsync(Id) is Post post)
+    if (await db.Posts.FindAsync(PostId) is Post post)
     {
         db.Posts.Remove(post);
         await db.SaveChangesAsync();
@@ -64,15 +64,26 @@ app.MapDelete("/api/posts/{id}", async (Guid Id, PostDb db) =>
     return Results.NotFound();
 });
 
+////////// USERS /////////////
+
 
 app.Run();
 
+class User {
+    public int UserId { get; set; }
+    public string Username { get; set; }
+    public int Rep { get; set; }
+    public string Password { get; set; }
+    public List<Post>? Posts { get; set; }
+
+}
+
 class Post {
-    public Guid Id { get; set; }
+    public int PostId { get; set; }
     public string? Title {get; set; }
     public DateTime Date { get; set; }
     public string Image { get; set; }
-    public string Location { get; set; }
+    public string? Location { get; set; }
     public int UpVotes { get; set; }
     public int DownVotes { get; set; }
     public string Author { get; set; }
@@ -87,21 +98,12 @@ class PostDb : DbContext
     public DbSet<Post> Posts => Set<Post>();
 }
 
-class User {
-    public string Username { get; set; }
-    public int Rep { get; set; }
-    public string Password { get; set; }
-    public List<string> Posts { get; set; }
-    public List<string> Followers { get; set; }
-    public List<string> LikedPosts { get; set; }
-}
-
 class UserDb : DbContext {
     public UserDb(DbContextOptions<UserDb> options) : base(options)
     {
     }
 
-    public DbSet<User> Posts => Set<User>();
+    public DbSet<User> Users => Set<User>();
 }
 
 
