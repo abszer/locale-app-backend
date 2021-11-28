@@ -26,7 +26,7 @@ app.MapPost("/api/posts", async (Post post, PostDb db) =>
 {
     db.Posts.Add(post);
     await db.SaveChangesAsync();
-    return Results.Created($"/api/posts/{posts.Id}", post);
+    return Results.Created($"/api/posts/{post.Id}", post);
 });
 
 // PUT
