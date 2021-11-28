@@ -8,51 +8,56 @@ var app = builder.Build();
 
 app.MapGet("/", () => "Hello World!");
 
-app.MapGet("/todoitems", async (TodoDb db) =>
-    await db.Todos.ToListAsync());
+////////// LOCALE API /////////////
 
-app.MapGet("/todoitems/complete", async (TodoDb db) =>
-    await db.Todos.Where(t => t.IsComplete).ToListAsync());
+//GET ALL
+app.MapGet("/api/posts", async (PostDb db) =>
+    await db.Posts.ToListAsync());
 
-app.MapGet("/todoitems/{id}", async (int id, TodoDb db) =>
-    await db.Todos.FindAsync(id)
-        is Todo todo
-            ? Results.Ok(todo)
+//GET ONE
+app.MapGet("/api/posts/{id}", async (Guid Id, PostDb db) =>
+    await db.Posts.FindAsync(Id) 
+            is Post post
+            ? Results.Ok(post)
             : Results.NotFound());
 
-app.MapPost("/todoitems", async (Todo todo, TodoDb db) =>
+// POST
+app.MapPost("/api/posts", async (Post post, PostDb db) => 
 {
-    db.Todos.Add(todo);
+    db.Posts.Add(post);
     await db.SaveChangesAsync();
-
-    return Results.Created($"/todoitems/{todo.Id}", todo);
+    return Results.Created($"/api/posts/{posts.Id}", post);
 });
 
-app.MapPut("/todoitems/{id}", async (int id, Todo inputTodo, TodoDb db) =>
+// PUT
+app.MapPut("/api/posts/{id}", async (Guid Id, Post inputPost, PostDb db) =>
 {
-    var todo = await db.Todos.FindAsync(id);
+    var post = await db.Posts.FindAsync(Id);
 
-    if (todo is null) return Results.NotFound();
+    if (post is null) return Results.NotFound();
 
-    todo.Name = inputTodo.Name;
-    todo.IsComplete = inputTodo.IsComplete;
+    post.Title = inputPost.Title;
+    post.Image = inputPost.Image;
+    post.Location = inputPost.Location;
 
     await db.SaveChangesAsync();
 
     return Results.NoContent();
 });
 
-app.MapDelete("/todoitems/{id}", async (int id, TodoDb db) =>
+// DELETE
+app.MapDelete("/api/posts/{id}", async (Guid Id, PostDb db) =>
 {
-    if (await db.Todos.FindAsync(id) is Todo todo)
+    if (await db.Posts.FindAsync(Id) is Post post)
     {
-        db.Todos.Remove(todo);
+        db.Posts.Remove(post);
         await db.SaveChangesAsync();
-        return Results.Ok(todo);
+        return Results.Ok(post);
     }
 
     return Results.NotFound();
 });
+
 
 app.Run();
 
@@ -76,33 +81,67 @@ class PostDb : DbContext
     public DbSet<Post> Posts => Set<Post>();
 }
 
-class Todo
-{
-    public int Id { get; set; }
-    public string Name { get; set; }
-    public bool IsComplete { get; set; }
-}
+// EXAMPLES
+// app.MapGet("/todoitems", async (TodoDb db) =>
+//     await db.Todos.ToListAsync());
 
-class TodoDb : DbContext
-{
-    public TodoDb(DbContextOptions<TodoDb> options)
-        : base(options) { }
+// app.MapGet("/todoitems/complete", async (TodoDb db) =>
+//     await db.Todos.Where(t => t.IsComplete).ToListAsync());
 
-    public DbSet<Todo> Todos => Set<Todo>();
-}
+// app.MapGet("/todoitems/{id}", async (int id, TodoDb db) =>
+//     await db.Todos.FindAsync(id)
+//         is Todo todo
+//             ? Results.Ok(todo)
+//             : Results.NotFound());
 
+// app.MapPost("/todoitems", async (Todo todo, TodoDb db) =>
+// {
+//     db.Todos.Add(todo);
+//     await db.SaveChangesAsync();
 
+//     return Results.Created($"/todoitems/{todo.Id}", todo);
+// });
 
+// app.MapPut("/todoitems/{id}", async (int id, Todo inputTodo, TodoDb db) =>
+// {
+//     var todo = await db.Todos.FindAsync(id);
 
+//     if (todo is null) return Results.NotFound();
 
+//     todo.Name = inputTodo.Name;
+//     todo.IsComplete = inputTodo.IsComplete;
 
+//     await db.SaveChangesAsync();
 
+//     return Results.NoContent();
+// });
 
+// app.MapDelete("/todoitems/{id}", async (int id, TodoDb db) =>
+// {
+//     if (await db.Todos.FindAsync(id) is Todo todo)
+//     {
+//         db.Todos.Remove(todo);
+//         await db.SaveChangesAsync();
+//         return Results.Ok(todo);
+//     }
 
+//     return Results.NotFound();
+// });
 
+// class Todo
+// {
+//     public int Id { get; set; }
+//     public string Name { get; set; }
+//     public bool IsComplete { get; set; }
+// }
 
+// class TodoDb : DbContext
+// {
+//     public TodoDb(DbContextOptions<TodoDb> options)
+//         : base(options) { }
 
-
+//     public DbSet<Todo> Todos => Set<Todo>();
+// }
 
 
 // Add services to the container.
