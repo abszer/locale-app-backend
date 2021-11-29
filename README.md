@@ -12,6 +12,7 @@
 - Learning about more complex features of React
 
 ### Day 3,4,5 
+- Azure webapp setup and database deployment
 - Pulled some hair out
 - Read through at least 50 Stack Overflow and Microsoft .NET Documentation pages pertaining to SQL integration and querying (EFCore, Linq, Annotations)
 - Added lines of code... removed lines of code... readded lines of code
