@@ -1,22 +1,28 @@
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Collections.Generic;
+using System.Linq;
+using BCrypt;
 
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<PostDb>(opt => opt.UseSqlServer(builder.Configuration.GetConnectionString("localeDb")));
+builder.Services.AddDbContext<UserDb>(opt => opt.UseSqlServer(builder.Configuration.GetConnectionString("localeDb")));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 var app = builder.Build();
 
 app.MapGet("/", () => "Hello World!");
 
-////////// LOCALE API /////////////
+////////// POSTS /////////////
 
 //GET ALL
 app.MapGet("/api/posts", async (PostDb db) =>
     await db.Posts.ToListAsync());
 
 //GET ONE
-app.MapGet("/api/posts/{id}", async (Guid Id, PostDb db) =>
-    await db.Posts.FindAsync(Id) 
+app.MapGet("/api/posts/{PostId}", async (int PostId, PostDb db) =>
+    await db.Posts.FindAsync(PostId) 
             is Post post
             ? Results.Ok(post)
             : Results.NotFound());
@@ -27,13 +33,13 @@ app.MapPost("/api/posts", async (Post post, PostDb db) =>
     post.Date = DateTime.Now;
     db.Posts.Add(post);
     await db.SaveChangesAsync();
-    return Results.Created($"/api/posts/{post.Id}", post);
+    return Results.Created($"/api/posts/{post.PostId}", post);
 });
 
 // PUT
-app.MapPut("/api/posts/{id}", async (Guid Id, Post inputPost, PostDb db) =>
+app.MapPut("/api/posts/{PostId}", async (int PostId, Post inputPost, PostDb db) =>
 {
-    var post = await db.Posts.FindAsync(Id);
+    var post = await db.Posts.FindAsync(PostId);
 
     if (post is null) return Results.NotFound();
 
@@ -50,9 +56,9 @@ app.MapPut("/api/posts/{id}", async (Guid Id, Post inputPost, PostDb db) =>
 });
 
 // DELETE
-app.MapDelete("/api/posts/{id}", async (Guid Id, PostDb db) =>
+app.MapDelete("/api/posts/{PostId}", async (int PostId, PostDb db) =>
 {
-    if (await db.Posts.FindAsync(Id) is Post post)
+    if (await db.Posts.FindAsync(PostId) is Post post)
     {
         db.Posts.Remove(post);
         await db.SaveChangesAsync();
@@ -62,15 +68,75 @@ app.MapDelete("/api/posts/{id}", async (Guid Id, PostDb db) =>
     return Results.NotFound();
 });
 
+////////// USERS /////////////
+
+//DEVELOPMENT
+//GET ALL
+app.MapGet("/api/users", async (UserDb db) =>
+    await db.Users.ToListAsync());
+
+// GET ONE
+app.MapGet("/api/users/{UserId}", async (int UserId, UserDb db) => 
+    await db.Users.FindAsync(UserId)
+            is User user
+            ? Results.Ok(user)
+            : Results.NotFound());
+
+// POST 
+app.MapPost("/api/users", async (User user, UserDb db) =>
+{
+    string salt = BCrypt.Net.BCrypt.GenerateSalt();
+    string hash = BCrypt.Net.BCrypt.HashPassword(user.Password, salt);
+    user.Password = hash;
+
+
+    db.Users.Add(user);
+    await db.SaveChangesAsync();
+    return Results.Created($"/api/users/{user.UserId}", user);
+});
+
+// POST (authenticate user)
+app.MapPost("/api/userauth", async ( User inputUser, UserDb db) =>
+{
+    bool isUser = await db.Users.FindAsync(inputUser.Username) is User;
+    if( isUser )
+    {
+        var user = await db.Users.FindAsync(inputUser.Username);
+        if(BCrypt.Net.BCrypt.Verify(inputUser.Password, user.Password ))
+        {
+            Results.Ok(user);
+        }else{
+            Results.Text("Incorrect password");
+        }
+    }else{
+        Results.NotFound();
+    }
+    
+
+});
 
 app.Run();
 
+[Keyless]
+[Index(nameof(Username), IsUnique = true)]
+class User {
+    public int UserId { get; set; }
+
+    [Required]
+    [StringLength(30)]
+    public string Username { get; set; }
+    public int Rep { get; set; }
+    public string Password { get; set; }
+
+
+}
+
 class Post {
-    public Guid Id { get; set; }
+    public int PostId { get; set; }
     public string? Title {get; set; }
     public DateTime Date { get; set; }
     public string Image { get; set; }
-    public string Location { get; set; }
+    public string? Location { get; set; }
     public int UpVotes { get; set; }
     public int DownVotes { get; set; }
     public string Author { get; set; }
@@ -84,6 +150,15 @@ class PostDb : DbContext
 
     public DbSet<Post> Posts => Set<Post>();
 }
+
+class UserDb : DbContext {
+    public UserDb(DbContextOptions<UserDb> options) : base(options)
+    {
+    }
+
+    public DbSet<User> Users => Set<User>();
+}
+
 
 // EXAMPLES
 // app.MapGet("/todoitems", async (TodoDb db) =>

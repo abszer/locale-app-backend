@@ -3,16 +3,18 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace LocaleApi.Migrations
+namespace LocaleApi.Migrations.PostDbMigrations
 {
     [DbContext(typeof(PostDb))]
-    partial class PostDbModelSnapshot : ModelSnapshot
+    [Migration("20211128234730_InitialPostCreate")]
+    partial class InitialPostCreate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -23,9 +25,11 @@ namespace LocaleApi.Migrations
 
             modelBuilder.Entity("Post", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("PostId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PostId"), 1L, 1);
 
                     b.Property<string>("Author")
                         .IsRequired()
@@ -42,7 +46,6 @@ namespace LocaleApi.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Location")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
@@ -51,7 +54,7 @@ namespace LocaleApi.Migrations
                     b.Property<int>("UpVotes")
                         .HasColumnType("int");
 
-                    b.HasKey("Id");
+                    b.HasKey("PostId");
 
                     b.ToTable("Posts");
                 });
