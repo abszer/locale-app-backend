@@ -1,66 +1,143 @@
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Collections.Generic;
+using System.Linq;
+using System;
+using BCrypt;
+
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddDbContext<TodoDb>(opt => opt.UseSqlServer());
+builder.Services.AddDbContext<PostDb>(opt => opt.UseSqlServer(builder.Configuration.GetConnectionString("localeDb")));
+builder.Services.AddDbContext<UserDb>(opt => opt.UseSqlServer(builder.Configuration.GetConnectionString("localeDb")));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 var app = builder.Build();
 
 app.MapGet("/", () => "Hello World!");
 
-app.MapGet("/todoitems", async (TodoDb db) =>
-    await db.Todos.ToListAsync());
+////////// POSTS /////////////
 
-app.MapGet("/todoitems/complete", async (TodoDb db) =>
-    await db.Todos.Where(t => t.IsComplete).ToListAsync());
+//GET ALL
+app.MapGet("/api/posts", async (PostDb db) =>
+    await db.Posts.ToListAsync());
 
-app.MapGet("/todoitems/{id}", async (int id, TodoDb db) =>
-    await db.Todos.FindAsync(id)
-        is Todo todo
-            ? Results.Ok(todo)
+//GET ONE
+app.MapGet("/api/posts/{PostId}", async (int PostId, PostDb db) =>
+    await db.Posts.FindAsync(PostId) 
+            is Post post
+            ? Results.Ok(post)
             : Results.NotFound());
 
-app.MapPost("/todoitems", async (Todo todo, TodoDb db) =>
+// POST
+app.MapPost("/api/posts", async (Post post, PostDb db) => 
 {
-    db.Todos.Add(todo);
+    post.Date = DateTime.Now;
+    db.Posts.Add(post);
     await db.SaveChangesAsync();
-
-    return Results.Created($"/todoitems/{todo.Id}", todo);
+    return Results.Created($"/api/posts/{post.PostId}", post);
 });
 
-app.MapPut("/todoitems/{id}", async (int id, Todo inputTodo, TodoDb db) =>
+// PUT
+app.MapPut("/api/posts/{PostId}", async (int PostId, Post inputPost, PostDb db) =>
 {
-    var todo = await db.Todos.FindAsync(id);
+    var post = await db.Posts.FindAsync(PostId);
 
-    if (todo is null) return Results.NotFound();
+    if (post is null) return Results.NotFound();
 
-    todo.Name = inputTodo.Name;
-    todo.IsComplete = inputTodo.IsComplete;
+    post.Title = inputPost.Title;
+    post.Image = inputPost.Image;
+    post.Date = inputPost.Date;
+    post.Location = inputPost.Location;
+    post.UpVotes = inputPost.UpVotes;
+    post.DownVotes = inputPost.DownVotes;
 
     await db.SaveChangesAsync();
 
     return Results.NoContent();
 });
 
-app.MapDelete("/todoitems/{id}", async (int id, TodoDb db) =>
+// DELETE
+app.MapDelete("/api/posts/{PostId}", async (int PostId, PostDb db) =>
 {
-    if (await db.Todos.FindAsync(id) is Todo todo)
+    if (await db.Posts.FindAsync(PostId) is Post post)
     {
-        db.Todos.Remove(todo);
+        db.Posts.Remove(post);
         await db.SaveChangesAsync();
-        return Results.Ok(todo);
+        return Results.Ok(post);
     }
 
     return Results.NotFound();
 });
 
+////////// USERS /////////////
+
+//DEVELOPMENT
+//GET ALL
+app.MapGet("/api/users", async (UserDb db) =>
+    await db.Users.ToListAsync());
+
+// GET ONE
+app.MapGet("/api/users/{UserId}", async (int UserId, UserDb db) => 
+    await db.Users.FindAsync(UserId)
+            is User user
+            ? Results.Ok(user)
+            : Results.NotFound());
+
+// POST 
+app.MapPost("/api/users", async (User user, UserDb db) =>
+{
+    string salt = BCrypt.Net.BCrypt.GenerateSalt();
+    string hash = BCrypt.Net.BCrypt.HashPassword(user.Password, salt);
+    user.Password = hash;
+    user.Rep = 0;
+
+
+    db.Users.Add(user);
+    await db.SaveChangesAsync();
+    return Results.Created($"/api/users/{user.UserId}", user);
+});
+
+// POST (authenticate user)
+app.MapPost("/api/userauth", async ( User inputUser, UserDb db) =>
+{
+
+    // var foundUser = db.Users.Where(u => u.Username == inputUser.Username).ToList();
+    var foundUser = db.Users.Where(u => u.Username == inputUser.Username).ToList();
+
+    if(foundUser.Any())
+    {
+        if(BCrypt.Net.BCrypt.Verify(inputUser.Password, foundUser[0].Password )){
+            return Results.Ok(foundUser);
+        }else{
+            return Results.Text("Incorrect Password");
+        }
+    }else{
+        return Results.Text("No user found.");
+    }
+
+});
+
 app.Run();
 
+[Index(nameof(Username), IsUnique = true)]
+class User {
+    public int UserId { get; set; }
+
+    [Required]
+    [StringLength(30)]
+    public string Username { get; set; }
+    public int Rep { get; set; }
+    public string Password { get; set; }
+
+
+}
+
 class Post {
-    public Guid Id { get; set; }
+    public int PostId { get; set; }
     public string? Title {get; set; }
     public DateTime Date { get; set; }
     public string Image { get; set; }
-    public string Location { get; set; }
+    public string? Location { get; set; }
     public int UpVotes { get; set; }
     public int DownVotes { get; set; }
     public string Author { get; set; }
@@ -75,33 +152,76 @@ class PostDb : DbContext
     public DbSet<Post> Posts => Set<Post>();
 }
 
-class Todo
-{
-    public int Id { get; set; }
-    public string Name { get; set; }
-    public bool IsComplete { get; set; }
-}
+class UserDb : DbContext {
+    public UserDb(DbContextOptions<UserDb> options) : base(options)
+    {
+    }
 
-class TodoDb : DbContext
-{
-    public TodoDb(DbContextOptions<TodoDb> options)
-        : base(options) { }
-
-    public DbSet<Todo> Todos => Set<Todo>();
+    public DbSet<User> Users => Set<User>();
 }
 
 
+// EXAMPLES
+// app.MapGet("/todoitems", async (TodoDb db) =>
+//     await db.Todos.ToListAsync());
 
+// app.MapGet("/todoitems/complete", async (TodoDb db) =>
+//     await db.Todos.Where(t => t.IsComplete).ToListAsync());
 
+// app.MapGet("/todoitems/{id}", async (int id, TodoDb db) =>
+//     await db.Todos.FindAsync(id)
+//         is Todo todo
+//             ? Results.Ok(todo)
+//             : Results.NotFound());
 
+// app.MapPost("/todoitems", async (Todo todo, TodoDb db) =>
+// {
+//     db.Todos.Add(todo);
+//     await db.SaveChangesAsync();
 
+//     return Results.Created($"/todoitems/{todo.Id}", todo);
+// });
 
+// app.MapPut("/todoitems/{id}", async (int id, Todo inputTodo, TodoDb db) =>
+// {
+//     var todo = await db.Todos.FindAsync(id);
 
+//     if (todo is null) return Results.NotFound();
 
+//     todo.Name = inputTodo.Name;
+//     todo.IsComplete = inputTodo.IsComplete;
 
+//     await db.SaveChangesAsync();
 
+//     return Results.NoContent();
+// });
 
+// app.MapDelete("/todoitems/{id}", async (int id, TodoDb db) =>
+// {
+//     if (await db.Todos.FindAsync(id) is Todo todo)
+//     {
+//         db.Todos.Remove(todo);
+//         await db.SaveChangesAsync();
+//         return Results.Ok(todo);
+//     }
 
+//     return Results.NotFound();
+// });
+
+// class Todo
+// {
+//     public int Id { get; set; }
+//     public string Name { get; set; }
+//     public bool IsComplete { get; set; }
+// }
+
+// class TodoDb : DbContext
+// {
+//     public TodoDb(DbContextOptions<TodoDb> options)
+//         : base(options) { }
+
+//     public DbSet<Todo> Todos => Set<Todo>();
+// }
 
 
 // Add services to the container.
