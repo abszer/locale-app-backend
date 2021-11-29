@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 using BCrypt;
 
 
@@ -88,6 +89,7 @@ app.MapPost("/api/users", async (User user, UserDb db) =>
     string salt = BCrypt.Net.BCrypt.GenerateSalt();
     string hash = BCrypt.Net.BCrypt.HashPassword(user.Password, salt);
     user.Password = hash;
+    user.Rep = 0;
 
 
     db.Users.Add(user);
@@ -98,20 +100,20 @@ app.MapPost("/api/users", async (User user, UserDb db) =>
 // POST (authenticate user)
 app.MapPost("/api/userauth", async ( User inputUser, UserDb db) =>
 {
-    bool isUser = await db.Users.FindAsync(inputUser.Username) is User;
-    if( isUser )
+
+    // var foundUser = db.Users.Where(u => u.Username == inputUser.Username).ToList();
+    var foundUser = db.Users.Where(u => u.Username == inputUser.Username).ToList();
+
+    if(foundUser.Any())
     {
-        var user = await db.Users.FindAsync(inputUser.Username);
-        if(BCrypt.Net.BCrypt.Verify(inputUser.Password, user.Password ))
-        {
-            Results.Ok(user);
+        if(BCrypt.Net.BCrypt.Verify(inputUser.Password, foundUser[0].Password )){
+            return Results.Ok(foundUser);
         }else{
-            Results.Text("Incorrect password");
+            return Results.Text("Incorrect Password");
         }
     }else{
-        Results.NotFound();
+        return Results.Text("No user found.");
     }
-    
 
 });
 
