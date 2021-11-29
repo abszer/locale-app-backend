@@ -117,7 +117,6 @@ app.MapPost("/api/userauth", async ( User inputUser, UserDb db) =>
 
 app.Run();
 
-[Keyless]
 [Index(nameof(Username), IsUnique = true)]
 class User {
     public int UserId { get; set; }
