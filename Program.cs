@@ -31,6 +31,8 @@ app.MapGet("/api/posts/{PostId}", async (int PostId, PostDb db) =>
 // POST
 app.MapPost("/api/posts", async (Post post, PostDb db) => 
 {
+    post.UpVotes = 1;
+    post.DownVotes = 0;
     post.Date = DateTime.Now;
     db.Posts.Add(post);
     await db.SaveChangesAsync();
@@ -99,7 +101,7 @@ app.MapPost("/api/users", async (User user, UserDb db) =>
 });
 
 // POST (authenticate user)
-app.MapPost("/api/userauth", async ( User inputUser, UserDb db) =>
+app.MapPost("/api/userauth", ( User inputUser, UserDb db) =>
 {
 
     // var foundUser = db.Users.Where(u => u.Username == inputUser.Username).ToList();
