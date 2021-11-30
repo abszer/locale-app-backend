@@ -141,6 +141,7 @@ class Post {
     public int UpVotes { get; set; }
     public int DownVotes { get; set; }
     public string Author { get; set; }
+    public string? Tags { get; set; }
 }
 
 class PostDb : DbContext 
