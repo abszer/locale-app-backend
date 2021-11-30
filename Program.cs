@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Cors;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,22 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<PostDb>(opt => opt.UseSqlServer(builder.Configuration.GetConnectionString("localeDb")));
 builder.Services.AddDbContext<UserDb>(opt => opt.UseSqlServer(builder.Configuration.GetConnectionString("localeDb")));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+builder.Services.AddCors( opt => {
+    opt.AddDefaultPolicy(
+        builder =>
+        {
+            builder.AllowAnyOrigin()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader();
+        });
+});
 var app = builder.Build();
+
+app.UseCors( builder => {
+    builder.AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowAnyOrigin();
+    });
 
 app.MapGet("/", () => "Hello World!");
 
