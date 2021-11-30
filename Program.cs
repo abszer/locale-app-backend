@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Cors;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,22 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<PostDb>(opt => opt.UseSqlServer(builder.Configuration.GetConnectionString("localeDb")));
 builder.Services.AddDbContext<UserDb>(opt => opt.UseSqlServer(builder.Configuration.GetConnectionString("localeDb")));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+builder.Services.AddCors( opt => {
+    opt.AddDefaultPolicy(
+        builder =>
+        {
+            builder.AllowAnyOrigin()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader();
+        });
+});
 var app = builder.Build();
+
+app.UseCors( builder => {
+    builder.AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowAnyOrigin();
+    });
 
 app.MapGet("/", () => "Hello World!");
 
@@ -31,6 +47,8 @@ app.MapGet("/api/posts/{PostId}", async (int PostId, PostDb db) =>
 // POST
 app.MapPost("/api/posts", async (Post post, PostDb db) => 
 {
+    post.UpVotes = 1;
+    post.DownVotes = 0;
     post.Date = DateTime.Now;
     db.Posts.Add(post);
     await db.SaveChangesAsync();
@@ -50,6 +68,7 @@ app.MapPut("/api/posts/{PostId}", async (int PostId, Post inputPost, PostDb db) 
     post.Location = inputPost.Location;
     post.UpVotes = inputPost.UpVotes;
     post.DownVotes = inputPost.DownVotes;
+    post.Tags = inputPost.Tags;
 
     await db.SaveChangesAsync();
 
@@ -98,7 +117,7 @@ app.MapPost("/api/users", async (User user, UserDb db) =>
 });
 
 // POST (authenticate user)
-app.MapPost("/api/userauth", async ( User inputUser, UserDb db) =>
+app.MapPost("/api/userauth", ( User inputUser, UserDb db) =>
 {
 
     // var foundUser = db.Users.Where(u => u.Username == inputUser.Username).ToList();
@@ -141,6 +160,7 @@ class Post {
     public int UpVotes { get; set; }
     public int DownVotes { get; set; }
     public string Author { get; set; }
+    public string? Tags { get; set; }
 }
 
 class PostDb : DbContext 
