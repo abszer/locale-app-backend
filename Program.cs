@@ -50,6 +50,7 @@ app.MapPut("/api/posts/{PostId}", async (int PostId, Post inputPost, PostDb db) 
     post.Location = inputPost.Location;
     post.UpVotes = inputPost.UpVotes;
     post.DownVotes = inputPost.DownVotes;
+    post.Tags = inputPost.Tags;
 
     await db.SaveChangesAsync();
 
