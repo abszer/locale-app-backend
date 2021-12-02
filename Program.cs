@@ -48,7 +48,10 @@ app.MapGet("/api/posts/{PostId}", async (int PostId, PostDb db) =>
             : Results.NotFound());
 
 
-// FILE STORAGE STUFF -- https://medium.com/@francesca.paterinaldi/building-a-simple-file-storage-server-with-net-core-ad608ca3dc05
+/////////// FILE STORAGE AND DOWNLOAD /////////////
+// -- https://medium.com/@francesca.paterinaldi/building-a-simple-file-storage-server-with-net-core-ad608ca3dc05
+// -- https://gist.github.com/davidfowl/ff1addd02d239d2d26f4648a06158727?WT.mc_id=-blog-scottha#describe-request-body
+// need to add security to this
 app.MapPost("/upload", async (HttpRequest req) => 
 {
     if(!req.HasFormContentType)
@@ -81,8 +84,25 @@ app.MapPost("/upload", async (HttpRequest req) =>
 
     return Results.Text("Success!");
 
-
 }).Accepts<IFormFile>("multipart/form-data");
+
+app.MapGet("/upload/{id}", async (string id) => {
+    string homePath = (Environment.OSVersion.Platform == PlatformID.Unix)
+    ? Environment.GetEnvironmentVariable("HOME") 
+    : Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%");
+
+    string uploadsPath = Path.Combine(homePath, "uploads");
+    string filePath = Path.Combine(uploadsPath, id);
+
+    if(System.IO.File.Exists(filePath))
+    {
+        byte[] b = await System.IO.File.ReadAllBytesAsync(filePath);
+        return Results.File(b, "application/octet-stream");
+    }
+    return Results.BadRequest();
+});
+
+//////////// END FILE STORAGE AND DOWNLOAD /////////
 
 // POST
 app.MapPost("/api/posts", async (Post post, PostDb db) => 
