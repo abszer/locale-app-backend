@@ -63,9 +63,8 @@ app.MapPost("/upload", async (HttpRequest req) =>
     var form = await req.ReadFormAsync();
     var file = form.Files["file"];
 
-    //DEBUG STUFF
-    // string fileExt = System.IO.Path.GetExtension(file);
-    // Console.WriteLine(file);
+    //Grab the file extension to append to end of new file
+    Console.WriteLine(file.FileName);
 
     if(file is null)
     {
