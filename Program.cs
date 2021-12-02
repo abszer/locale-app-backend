@@ -51,7 +51,7 @@ app.MapGet("/api/posts/{PostId}", async (int PostId, PostDb db) =>
 /////////// FILE STORAGE AND DOWNLOAD /////////////
 // -- https://medium.com/@francesca.paterinaldi/building-a-simple-file-storage-server-with-net-core-ad608ca3dc05
 // -- https://gist.github.com/davidfowl/ff1addd02d239d2d26f4648a06158727?WT.mc_id=-blog-scottha#describe-request-body
-// need to add security to this
+// need to add security to this only allow file to be uploaded if extension is that of image type
 
 app.MapPost("/upload", async (HttpRequest req) => 
 {
