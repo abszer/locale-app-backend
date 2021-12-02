@@ -87,7 +87,7 @@ app.MapPost("/upload", async (HttpRequest req) =>
     await using var uploadStream = file.OpenReadStream();
     await uploadStream.CopyToAsync(fileStream);
 
-    return Results.Text("Success!");
+    return Results.Text(newFileName);
 
 }).Accepts<IFormFile>("multipart/form-data");
 
