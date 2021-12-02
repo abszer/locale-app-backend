@@ -52,7 +52,7 @@ app.MapGet("/api/posts/{PostId}", async (int PostId, PostDb db) =>
 // -- https://medium.com/@francesca.paterinaldi/building-a-simple-file-storage-server-with-net-core-ad608ca3dc05
 // -- https://gist.github.com/davidfowl/ff1addd02d239d2d26f4648a06158727?WT.mc_id=-blog-scottha#describe-request-body
 // need to add security to this
-// no file extension added to file but I guess it doesn't mattter?
+
 app.MapPost("/upload", async (HttpRequest req) => 
 {
     if(!req.HasFormContentType)
@@ -64,7 +64,7 @@ app.MapPost("/upload", async (HttpRequest req) =>
     var file = form.Files["file"];
 
     //Grab the file extension to append to end of new file
-    Console.WriteLine(file.FileName);
+    string fileExt = System.IO.Path.GetExtension(file.FileName);
 
     if(file is null)
     {
@@ -77,7 +77,7 @@ app.MapPost("/upload", async (HttpRequest req) =>
     : Environment.ExpandEnvironmentVariables("%HOMEDRIVE%%HOMEPATH%");
 
     string uploadsPath = Path.Combine(homePath, "uploads");
-    string newFileName = DateTime.Now.Ticks + "_" + Guid.NewGuid().ToString();
+    string newFileName = DateTime.Now.Ticks + "_" + Guid.NewGuid().ToString() + fileExt;
 
     Directory.CreateDirectory(uploadsPath);
     var filePath = Path.Combine(uploadsPath, newFileName);
@@ -86,7 +86,7 @@ app.MapPost("/upload", async (HttpRequest req) =>
     await using var uploadStream = file.OpenReadStream();
     await uploadStream.CopyToAsync(fileStream);
 
-    return Results.Text("Success!");
+    return Results.Text(newFileName);
 
 }).Accepts<IFormFile>("multipart/form-data");
 
